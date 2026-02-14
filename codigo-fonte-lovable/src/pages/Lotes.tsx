@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
-import { mockLots } from '@/data/mockData';
+import { useVaccineData } from '@/hooks/VaccineContext';
 import { VaccineLot } from '@/types/vaccine';
 import { format, differenceInDays } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -21,14 +21,24 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { Plus, Search, Filter, Package, AlertTriangle, Clock, CheckCircle } from 'lucide-react';
+import { Plus, Search, Filter, Package, AlertTriangle, Clock, CheckCircle, Loader2 } from 'lucide-react';
 
 export default function Lotes() {
+  const { lots, loading } = useVaccineData();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
 
-  const filteredLots = mockLots.filter((lot) => {
+  if (loading) {
+    return (
+      <MainLayout title="Estoque de Lotes" subtitle="Carregando...">
+        <div className="flex h-[60vh] items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </MainLayout>
+    );
+  }
+
+  const filteredLots = lots.filter((lot) => {
     const matchesSearch =
       lot.vaccineName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       lot.lotNumber.toLowerCase().includes(searchTerm.toLowerCase());
@@ -116,7 +126,7 @@ export default function Lotes() {
                 <Package className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-foreground">{mockLots.length}</p>
+                <p className="text-2xl font-bold text-foreground">{lots.length}</p>
                 <p className="text-sm text-muted-foreground">Total de Lotes</p>
               </div>
             </div>
@@ -128,7 +138,7 @@ export default function Lotes() {
               </div>
               <div>
                 <p className="text-2xl font-bold text-success">
-                  {mockLots.filter((l) => l.status === 'available').length}
+                  {lots.filter((l) => l.status === 'available').length}
                 </p>
                 <p className="text-sm text-muted-foreground">Disponíveis</p>
               </div>
@@ -141,7 +151,7 @@ export default function Lotes() {
               </div>
               <div>
                 <p className="text-2xl font-bold text-warning">
-                  {mockLots.filter((l) => l.status === 'low').length}
+                  {lots.filter((l) => l.status === 'low').length}
                 </p>
                 <p className="text-sm text-muted-foreground">Estoque Baixo</p>
               </div>
@@ -154,7 +164,7 @@ export default function Lotes() {
               </div>
               <div>
                 <p className="text-2xl font-bold text-destructive">
-                  {mockLots.filter((l) => l.status === 'critical').length}
+                  {lots.filter((l) => l.status === 'critical').length}
                 </p>
                 <p className="text-sm text-muted-foreground">Críticos</p>
               </div>

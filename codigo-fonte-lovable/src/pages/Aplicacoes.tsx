@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
-import { mockApplications, vaccines, ageGroups, doseTypes, mockLots } from '@/data/mockData';
+import { useVaccineData } from '@/hooks/VaccineContext';
+import { vaccines, ageGroups, doseTypes } from '@/data/mockData';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import {
@@ -31,40 +32,68 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Search, Syringe, User, Calendar } from 'lucide-react';
+import { Plus, Search, Syringe, User, Calendar, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function Aplicacoes() {
+  const { lots, applications, loading, addApplication } = useVaccineData();
   const [searchTerm, setSearchTerm] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedVaccine, setSelectedVaccine] = useState('');
   const [selectedLot, setSelectedLot] = useState('');
-  const [selectedDose, setSelectedDose] = useState('');
+  const [selectedDose, setSelectedDose] = useState<any>('');
   const [selectedAge, setSelectedAge] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const filteredApplications = mockApplications.filter((app) =>
+  if (loading) {
+    return (
+      <MainLayout title="Aplicações" subtitle="Carregando...">
+        <div className="flex h-[60vh] items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </MainLayout>
+    );
+  }
+
+  const filteredApplications = applications.filter((app) =>
     app.vaccineName.toLowerCase().includes(searchTerm.toLowerCase()) ||
     app.lotNumber.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const availableLots = mockLots.filter(
+  const availableLots = lots.filter(
     (lot) =>
       lot.vaccineId === selectedVaccine &&
       lot.status !== 'expired' &&
       lot.quantityCurrent > 0
   );
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!selectedVaccine || !selectedLot || !selectedDose || !selectedAge) {
       toast.error('Preencha todos os campos obrigatórios');
       return;
     }
-    toast.success('Aplicação registrada com sucesso!');
-    setIsDialogOpen(false);
-    setSelectedVaccine('');
-    setSelectedLot('');
-    setSelectedDose('');
-    setSelectedAge('');
+
+    setIsSubmitting(true);
+    const vaccineName = vaccines.find(v => v.id === selectedVaccine)?.name || '';
+
+    const success = await addApplication({
+      vaccineId: selectedVaccine,
+      vaccineName,
+      lotNumber: selectedLot,
+      doseType: selectedDose,
+      ageGroup: selectedAge,
+      quantity: 1
+    });
+
+    setIsSubmitting(false);
+
+    if (success) {
+      setIsDialogOpen(false);
+      setSelectedVaccine('');
+      setSelectedLot('');
+      setSelectedDose('');
+      setSelectedAge('');
+    }
   };
 
   const doseLabels: Record<string, string> = {
@@ -152,7 +181,7 @@ export default function Aplicacoes() {
                           <div className="flex items-center gap-2">
                             <span>{lot.lotNumber}</span>
                             <span className="text-xs text-muted-foreground">
-                              (Val: {format(lot.expiryDate, 'dd/MM/yy')} | Est: {lot.quantityCurrent})
+                              (Val: {format(new Date(lot.expiryDate), 'dd/MM/yy')} | Est: {lot.quantityCurrent})
                             </span>
                           </div>
                         </SelectItem>
@@ -202,10 +231,17 @@ export default function Aplicacoes() {
               </div>
 
               <DialogFooter>
-                <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+                <Button variant="outline" onClick={() => setIsDialogOpen(false)} disabled={isSubmitting}>
                   Cancelar
                 </Button>
-                <Button onClick={handleSubmit}>Registrar</Button>
+                <Button onClick={handleSubmit} disabled={isSubmitting}>
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Salvando...
+                    </>
+                  ) : 'Registrar'}
+                </Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
@@ -220,8 +256,8 @@ export default function Aplicacoes() {
               </div>
               <div>
                 <p className="text-2xl font-bold text-foreground">
-                  {mockApplications.filter(
-                    (a) => format(a.date, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd')
+                  {applications.filter(
+                    (a) => format(new Date(a.date), 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd')
                   ).length}
                 </p>
                 <p className="text-sm text-muted-foreground">Aplicações Hoje</p>
@@ -235,9 +271,9 @@ export default function Aplicacoes() {
               </div>
               <div>
                 <p className="text-2xl font-bold text-foreground">
-                  {mockApplications.length}
+                  {applications.length}
                 </p>
-                <p className="text-sm text-muted-foreground">Total do Mês</p>
+                <p className="text-sm text-muted-foreground">Total de Registros</p>
               </div>
             </div>
           </div>

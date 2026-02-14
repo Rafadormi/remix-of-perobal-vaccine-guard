@@ -7,25 +7,25 @@ export function QuickActions() {
     {
       label: 'Registrar Aplicação',
       icon: Syringe,
-      href: '/applications',
+      href: '/aplicacoes',
       variant: 'default' as const,
     },
     {
       label: 'Registrar Temperatura',
       icon: Thermometer,
-      href: '/temperature',
+      href: '/temperatura',
       variant: 'outline' as const,
     },
     {
       label: 'Entrada de Lote',
       icon: Package,
-      href: '/lots',
+      href: '/lotes',
       variant: 'outline' as const,
     },
     {
       label: 'Registrar Perda',
       icon: AlertTriangle,
-      href: '/losses',
+      href: '/perdas',
       variant: 'outline' as const,
     },
   ];

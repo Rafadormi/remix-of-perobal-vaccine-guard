@@ -4,11 +4,23 @@ import { TemperatureWidget } from '@/components/dashboard/TemperatureWidget';
 import { LotStatusTable } from '@/components/dashboard/LotStatusTable';
 import { RecentApplications } from '@/components/dashboard/RecentApplications';
 import { QuickActions } from '@/components/dashboard/QuickActions';
-import { mockLots, mockApplications, mockDashboardStats } from '@/data/mockData';
-import { Package, Syringe, AlertTriangle, Calendar, ShieldAlert } from 'lucide-react';
+import { useVaccineData } from '@/hooks/VaccineContext';
+import { Package, Syringe, Calendar, ShieldAlert, Loader2 } from 'lucide-react';
 
 export default function Dashboard() {
-  const lotsNeedingAttention = mockLots.filter(
+  const { lots, applications, stats, loading } = useVaccineData();
+
+  if (loading || !stats) {
+    return (
+      <MainLayout title="Dashboard" subtitle="Carregando dados...">
+        <div className="flex h-[60vh] items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </MainLayout>
+    );
+  }
+
+  const lotsNeedingAttention = lots.filter(
     (lot) => lot.status === 'critical' || lot.status === 'low'
   );
 
@@ -22,26 +34,26 @@ export default function Dashboard() {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <StatCard
             title="Doses Disponíveis"
-            value={mockDashboardStats.availableDoses}
-            subtitle={`${mockDashboardStats.totalLots} lotes ativos`}
+            value={stats.availableDoses}
+            subtitle={`${stats.totalLots} lotes ativos`}
             icon={<Package className="h-6 w-6" />}
           />
           <StatCard
             title="Aplicações Hoje"
-            value={mockDashboardStats.applicationsToday}
+            value={stats.applicationsToday}
             icon={<Syringe className="h-6 w-6" />}
-            trend={{ value: 15, isPositive: true }}
+            trend={{ value: 0, isPositive: true }}
           />
           <StatCard
             title="Vencendo em 30 dias"
-            value={mockDashboardStats.expiringIn30Days}
+            value={stats.expiringIn30Days}
             subtitle="Lotes próximos ao vencimento"
             icon={<Calendar className="h-6 w-6" />}
             variant="warning"
           />
           <StatCard
             title="Estoque Crítico"
-            value={mockDashboardStats.criticalStock}
+            value={stats.criticalStock}
             subtitle="Requer ação imediata"
             icon={<ShieldAlert className="h-6 w-6" />}
             variant="danger"
@@ -53,8 +65,8 @@ export default function Dashboard() {
           {/* Temperature Widget and Quick Actions */}
           <div className="space-y-6">
             <TemperatureWidget
-              temperature={mockDashboardStats.lastTemperature}
-              status={mockDashboardStats.temperatureStatus}
+              temperature={stats.lastTemperature}
+              status={stats.temperatureStatus}
               lastUpdate="08:00"
             />
             <QuickActions />
@@ -62,7 +74,7 @@ export default function Dashboard() {
 
           {/* Recent Applications */}
           <div className="lg:col-span-2">
-            <RecentApplications applications={mockApplications} />
+            <RecentApplications applications={applications} />
           </div>
         </div>
 
