@@ -98,9 +98,7 @@ const lossFormSchema = z.object({
   vaccineId: z.string().min(1, 'Selecione uma vacina'),
   lotNumber: z.string().min(1, 'Selecione um lote'),
   quantity: z.coerce.number().min(1, 'Quantidade deve ser pelo menos 1'),
-  reason: z.enum(['expired', 'broken', 'temperature', 'contaminated', 'other'], {
-    required_error: 'Selecione o motivo da perda',
-  }),
+  reason: z.literal('expired').or(z.literal('broken')).or(z.literal('temperature')).or(z.literal('contaminated')).or(z.literal('other')),
   notes: z.string().optional(),
   registeredBy: z.string().min(1, 'Informe o responsável'),
 });
@@ -116,7 +114,7 @@ export default function Perdas() {
   const { toast } = useToast();
 
   const form = useForm<LossFormValues>({
-    resolver: zodResolver(lossFormSchema),
+    resolver: zodResolver(lossFormSchema) as any,
     defaultValues: {
       vaccineId: '',
       lotNumber: '',
